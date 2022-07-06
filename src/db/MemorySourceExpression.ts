@@ -3,13 +3,14 @@ import { SourceExpression } from "../Expression.js";
 import { ChunkIterable } from "../ChunkIterable.js";
 import MemorySourceChunkIterable from "./MemorySourceChunkIterable.js";
 import { ModelType } from "./MemoryDb.js";
+import HopPlan from "plan/HopPlan.js";
 
 export default class MemorySourceExpression<T extends ModelType>
   implements SourceExpression<T>
 {
   constructor(private collection: string) {}
 
-  optimize(plan: Plan): Plan {
+  optimize(plan: Plan, nextHop?: HopPlan): Plan {
     // Here we would visit all expressions in the plan (plan.derivations) and decide
     // how to optimize them.
     // Examples:
@@ -34,6 +35,10 @@ export default class MemorySourceExpression<T extends ModelType>
     // Expressions may also "hop" / traverse edges.
 
     let derivs = [...plan.derivations];
+    if (nextHop) {
+      derivs.push(nextHop.hop);
+      derivs = derivs.concat(nextHop.derivations);
+    }
     return new Plan(new MemorySourceExpression(this.collection), derivs);
   }
 

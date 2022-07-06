@@ -1,9 +1,12 @@
 import MemorySourceExpression from "db/MemorySourceExpression.js";
+import { ObjectFieldHopQuery } from "ObjectFieldHop.js";
+import HopPlan from "plan/HopPlan.js";
 import Plan, { IPlan } from "plan/Plan.js";
 import {
   Direction,
   Expression,
   filter,
+  HopExpression,
   map,
   ObjectFieldGetter,
   orderBy,
@@ -12,7 +15,7 @@ import {
 } from "./Expression.js";
 import P, { Predicate } from "./Predicate.js";
 
-abstract class Query<T> {
+export abstract class Query<T> {
   // async since we allow application of async filters, maps, etc.
   async gen(): Promise<T[]> {
     const plan = this.plan().optimize();
@@ -58,6 +61,13 @@ class DerivedQuery<TOut> extends Query<TOut> {
     return new DerivedQuery(this, expression);
   }
 
+  query<T>(path: string[]): DerivedQuery<T> {
+    // ObjectFieldSourceExpression
+    // we get the thing along the path
+    // turn it into a StaticChunkIterable
+    return new DerivedQuery(ObjectFieldHopQuery.create(this, path));
+  }
+
   where<T>(path: string[], predicate: Predicate<T>) {
     return this.derive(filter<TOut, T>(new ObjectFieldGetter(path), predicate));
   }
@@ -89,6 +99,28 @@ class DerivedQuery<TOut> extends Query<TOut> {
 
   implicatedDatasets(): Set<string> {
     return this.#priorQuery.implicatedDatasets();
+  }
+}
+
+export abstract class HopQuery<TIn, TOut> extends Query<TOut> {
+  constructor(
+    private priorQuery: Query<TIn>,
+    public readonly expression: HopExpression<TIn, TOut>
+  ) {
+    super();
+  }
+
+  plan() {
+    return new HopPlan(this.priorQuery.plan(), this.expression, []);
+  }
+
+  implicatedDatasets(): Set<string> {
+    const s = this.priorQuery.implicatedDatasets();
+    const ds = this.expression.implicatedDataset();
+    if (ds != null) {
+      s.add(ds);
+    }
+    return s;
   }
 }
 

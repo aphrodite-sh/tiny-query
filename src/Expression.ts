@@ -1,3 +1,4 @@
+import followPath from "followPath.js";
 import { ChunkIterable, TakeChunkIterable } from "./ChunkIterable.js";
 import HopPlan from "./plan/HopPlan.js";
 import Plan, { IPlan } from "./plan/Plan.js";
@@ -11,11 +12,7 @@ export class ObjectFieldGetter<Tm, Tv> implements FieldGetter<Tm, Tv> {
   constructor(public readonly path: string[]) {}
 
   get(model: Tm): Tv {
-    let queriedValue = model;
-    for (const key of this.path) {
-      queriedValue = queriedValue[key];
-    }
-    return queriedValue as unknown as Tv;
+    return followPath(model, this.path);
   }
 }
 
@@ -27,14 +24,16 @@ export type ExpressionType =
   | "orderBy"
   | "hop"
   | "count"
-  | "map";
+  | "map"
+  | "hop";
 
 export type Expression =
   | ReturnType<typeof take>
   | ReturnType<typeof filter>
   | ReturnType<typeof orderBy>
   | ReturnType<typeof count>
-  | ReturnType<typeof map>;
+  | ReturnType<typeof map>
+  | ReturnType<typeof hop>;
 
 export interface SourceExpression<TOut> {
   readonly iterable: ChunkIterable<TOut>;
@@ -53,7 +52,7 @@ export interface HopExpression<TIn, TOut> {
    * Optimizes the current plan (plan) and folds in the nxet hop (nextHop) if possible.
    */
   optimize(sourcePlan: IPlan, plan: HopPlan, nextHop?: HopPlan): HopPlan;
-  implicatedDataset(): string;
+  implicatedDataset(): string | null;
   type: "hop";
 }
 
@@ -140,4 +139,8 @@ export function count<Tm>(): { type: "count" } & DerivedExpression<Tm, number> {
       return iterable.count();
     },
   };
+}
+
+export function hop<TIn, TOut>(): HopExpression<TIn, TOut> {
+  throw new Error();
 }
