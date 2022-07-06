@@ -14,15 +14,16 @@ export default class MemorySourceExpression<T extends ModelType>
     // Here we would visit all expressions in the plan (plan.derivations) and decide
     // how to optimize them.
     // Examples:
-    // -if those expressions get fulfilled from different indices
+    // - if those expressions get fulfilled from different indices
     // - if they are hoisted to the database server
     //
-    // Perofming no optimizations would just execute expression in the application server
+    // Performing no optimizations would just execute the expressions in the application server
     //
     // As a concerete example --
-    // If a filter exists on an indexed field in the derivations, we could pull that out
+    // If a filter exists on an indexed field in the derived expressions, we could pull that out
     // and query against the index first.
     //
+    // Another example --
     // For SQL -- we can "hoist" expressions to the backend. As in, convert each hoistable expression to SQL
     // and remove the expression from `plan.derivations`.
     //
