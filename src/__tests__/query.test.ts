@@ -1,3 +1,4 @@
+import { orderBy } from "Expression.js";
 import { memoryDb } from "../db/MemoryDb.js";
 import P from "../Predicate.js";
 import { queryAll } from "../Query.js";
@@ -57,19 +58,20 @@ test("basic query", async () => {
     .where(["name"], P.equals("Brown"))
     .query(["animals"])
     .where(["weight"], P.greaterThan(30))
+    .orderBy(["weight"], "desc")
     .gen();
 
   console.log(brownsLargeAnimals);
   expect(brownsLargeAnimals).toEqual([
     {
-      type: "pig",
-      weight: 160,
-      ageInWeeks: 18,
-    },
-    {
       type: "cow",
       weight: 300,
       ageInWeeks: 24,
+    },
+    {
+      type: "pig",
+      weight: 160,
+      ageInWeeks: 18,
     },
   ]);
 
@@ -100,6 +102,14 @@ test("basic query", async () => {
     { type: "cow", weight: 300, ageInWeeks: 24 },
     { type: "alligator", weight: 250, ageInWeeks: 520 },
   ]);
+
+  const animalTypes = await queryAll("farmers")
+    .query(["animals"])
+    .map((a: { type: string }) => a.type)
+    .gen();
+
+  console.log(animalTypes);
+  expect(animalTypes).toEqual(["pig", "cow", "dog", "alligator"]);
 
   // TODO: if we want to return _farmers_ that _have_ large animals
   // we need to port over `whereQueryExists`
