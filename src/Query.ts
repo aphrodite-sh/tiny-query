@@ -1,7 +1,6 @@
-import MemorySourceExpression from "db/MemorySourceExpression.js";
-import { ObjectFieldHopQuery } from "ObjectFieldHop.js";
-import HopPlan from "plan/HopPlan.js";
-import Plan, { IPlan } from "plan/Plan.js";
+import MemorySourceExpression from "./db/MemorySourceExpression.js";
+import HopPlan from "./plan/HopPlan.js";
+import Plan, { IPlan } from "./plan/Plan.js";
 import {
   Direction,
   Expression,
@@ -14,6 +13,7 @@ import {
   take,
 } from "./Expression.js";
 import P, { Predicate } from "./Predicate.js";
+import ObjectFieldHopExpression from "./hop/ObjectFieldHopExpression.js";
 
 export abstract class Query<T> {
   // async since we allow application of async filters, maps, etc.
@@ -127,4 +127,19 @@ export abstract class HopQuery<TIn, TOut> extends Query<TOut> {
 export function queryAll<TOut>(collection: string): DerivedQuery<TOut> {
   const source = new SourceQuery(new MemorySourceExpression(collection));
   return new DerivedQuery(source);
+}
+
+export default class ObjectFieldHopQuery<
+  TIn extends Object,
+  TOut extends Object
+> extends HopQuery<TIn, TOut> {
+  static create<TIn extends Object, TOut extends Object>(
+    sourceQuery: Query<TIn>,
+    path: string[]
+  ) {
+    return new ObjectFieldHopQuery<TIn, TOut>(
+      sourceQuery,
+      new ObjectFieldHopExpression(path)
+    );
+  }
 }

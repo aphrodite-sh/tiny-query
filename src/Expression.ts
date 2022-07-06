@@ -1,17 +1,17 @@
-import followPath from "followPath.js";
+import followPath from "./followPath.js";
 import { ChunkIterable, TakeChunkIterable } from "./ChunkIterable.js";
 import HopPlan from "./plan/HopPlan.js";
 import Plan, { IPlan } from "./plan/Plan.js";
 import { Predicate } from "./Predicate.js";
 
 export interface FieldGetter<Tm, Tv> {
-  readonly get: (Tm) => Tv;
+  readonly get: (Tm) => Tv | undefined;
 }
 
 export class ObjectFieldGetter<Tm, Tv> implements FieldGetter<Tm, Tv> {
   constructor(public readonly path: string[]) {}
 
-  get(model: Tm): Tv {
+  get(model: Tm): Tv | undefined {
     return followPath(model, this.path);
   }
 }
@@ -121,6 +121,13 @@ export function orderBy<Tm, Tv>(
 
         if (leftValue == rightValue) {
           return 0;
+        }
+
+        if (leftValue == null) {
+          return -1;
+        }
+        if (rightValue == null) {
+          return 1;
         }
 
         if (leftValue > rightValue) {
