@@ -4,6 +4,7 @@ import Plan, { IPlan } from "./plan/Plan.js";
 import {
   Expression,
   filter,
+  groupBy,
   HopExpression,
   map,
   orderByLambda,
@@ -77,6 +78,14 @@ class DerivedQuery<TOut> extends Query<TOut> {
 
   map<TMapped>(fn: (t: TOut) => TMapped): DerivedQuery<TMapped> {
     return this.derive<TMapped>(map(fn));
+  }
+
+  // flatMap<TMapped>(fn: (t: TOut) => TMapped[]): DerivedQuery<TMapped> {
+  //   return this.derive<TMapped>(flatMap(fn));
+  // }
+
+  groupBy<Tv>(fn: (t: TOut) => Tv): DerivedQuery<[Tv, TOut[]]> {
+    return this.derive<[Tv, TOut[]]>(groupBy(fn));
   }
 
   plan() {

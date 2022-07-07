@@ -18,6 +18,7 @@ export interface ChunkIterable<T> {
   filterAsync(fn: (x: T) => Promise<boolean>): ChunkIterable<T>;
   orderBy(fn: (l: T, r: T) => number): ChunkIterable<T>;
   take(n: number): ChunkIterable<T>;
+  groupBy<Tv>(fn: (x: T) => Tv): ChunkIterable<[Tv, T[]]>;
   count(): ChunkIterable<number>;
 }
 
@@ -52,6 +53,10 @@ export abstract class BaseChunkIterable<T> implements ChunkIterable<T> {
 
   orderBy(fn: (l: T, r: T) => number): ChunkIterable<T> {
     return new OrderedChunkIterable(this, fn);
+  }
+
+  groupBy<Tv>(fn: (x: T) => Tv): ChunkIterable<[Tv, T[]]> {
+    return new GroupByChunkIterable(this, fn);
   }
 
   take(n: number): ChunkIterable<T> {
@@ -227,6 +232,32 @@ export class OrderedChunkIterable<T> extends BaseChunkIterable<T> {
       all = all.concat(chunk);
     }
     yield all.sort(this.fn);
+  }
+}
+
+export class GroupByChunkIterable<T, Tv> extends BaseChunkIterable<[Tv, T[]]> {
+  constructor(private source: ChunkIterable<T>, private fn: (x: T) => Tv) {
+    super();
+  }
+
+  async *[Symbol.asyncIterator](): AsyncIterator<readonly [Tv, T[]][]> {
+    let all: T[] = [];
+    for await (const chunk of this.source) {
+      all = all.concat(chunk);
+    }
+    const ret = all.reduce((l, r) => {
+      const key = this.fn(r);
+      const existing = l.get(key);
+      if (existing) {
+        existing.push(r);
+      } else {
+        l.set(key, [r]);
+      }
+
+      return l;
+    }, new Map<Tv, T[]>());
+
+    yield [...ret.entries()];
   }
 }
 

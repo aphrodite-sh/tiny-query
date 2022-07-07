@@ -27,7 +27,8 @@ export type ExpressionType =
   | "hop"
   | "count"
   | "map"
-  | "hop";
+  | "hop"
+  | "groupBy";
 
 export type Expression =
   | ReturnType<typeof take>
@@ -36,7 +37,8 @@ export type Expression =
   | ReturnType<typeof orderByLambda>
   | ReturnType<typeof count>
   | ReturnType<typeof map>
-  | ReturnType<typeof hop>;
+  | ReturnType<typeof hop>
+  | ReturnType<typeof groupBy>;
 
 export interface SourceExpression<TOut> {
   readonly iterable: ChunkIterable<TOut>;
@@ -160,7 +162,18 @@ export function count<Tm>(): { type: "count" } & DerivedExpression<Tm, number> {
   };
 }
 
-// export function groupBy
+export function groupBy<Tm, Tv>(
+  fn: (x: Tm) => Tv
+): {
+  type: "groupBy";
+} & DerivedExpression<Tm, [Tv, Tm[]]> {
+  return {
+    type: "groupBy",
+    chainAfter(iterable) {
+      return iterable.groupBy(fn);
+    },
+  };
+}
 
 export function hop<TIn, TOut>(): HopExpression<TIn, TOut> {
   throw new Error();
