@@ -71,19 +71,19 @@ class DerivedQuery<TOut> extends Query<TOut> {
   }
 
   orderBy(path: Paths<TOut>, direction: Direction) {
-    return this.derive(orderBy(new ObjectFieldGetter(path), direction));
+    return this.derive<TOut>(orderBy(new ObjectFieldGetter(path), direction));
   }
 
   take(n: number) {
-    return this.derive(take(n));
+    return this.derive<TOut>(take(n));
   }
 
   whereLambda(fn: (t: TOut) => boolean): DerivedQuery<TOut> {
-    return this.derive(filter<TOut, TOut>(null, P.lambda(fn)));
+    return this.derive<TOut>(filter<TOut, TOut>(null, P.lambda(fn)));
   }
 
   map<TMapped>(fn: (t: TOut) => TMapped): DerivedQuery<TMapped> {
-    return this.derive(map(fn));
+    return this.derive<TMapped>(map(fn));
   }
 
   plan() {
