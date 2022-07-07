@@ -1,5 +1,3 @@
-import { orderBy } from "Expression.js";
-import P from "../Predicate.js";
 import { querify } from "../Query.js";
 
 test("basic query", async () => {
@@ -110,12 +108,12 @@ test("basic query", async () => {
   console.log(animalTypes);
   expect(animalTypes).toEqual(["pig", "cow", "dog", "alligator"]);
 
-  const grouped = await querify(farmers)
+  const bGroup = await querify(farmers)
     .groupBy((x) => x.name[0])
     .where((x) => x[0] === "B")
-    .map((x) => x[1])
+    .flatMap((x) => x[1])
     .gen();
-  console.log(grouped);
+  console.log(bGroup);
 
   // TODO: if we want to return _farmers_ that _have_ large animals
   // we need to port over `whereQueryExists`

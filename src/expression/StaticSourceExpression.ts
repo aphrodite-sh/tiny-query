@@ -1,5 +1,5 @@
 import Plan from "../plan/Plan.js";
-import { SourceExpression } from "../Expression.js";
+import { SourceExpression } from "./Expression.js";
 import {
   ChunkIterable,
   StaticSourceUnchunkedChunkIterable,

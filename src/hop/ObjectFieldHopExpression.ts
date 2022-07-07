@@ -1,6 +1,5 @@
-import { Paths } from "../paths.js";
 import { ChunkIterable } from "../ChunkIterable.js";
-import { HopExpression } from "../Expression.js";
+import { HopExpression } from "../expression/Expression.js";
 import HopPlan from "../plan/HopPlan.js";
 import { IPlan } from "../plan/Plan.js";
 import ObjectFieldHopChunkIterable from "./ObjectFieldHopChunkIterable.js";

@@ -13,6 +13,7 @@ export interface ChunkIterable<T> {
   gen(): Promise<readonly T[]>;
 
   map<TOut>(fn: (x: T) => TOut): ChunkIterable<TOut>;
+  flatMap<TOut>(fn: (x: T) => TOut[]): ChunkIterable<TOut>;
   mapAsync<TOut>(fn: (x: T) => Promise<TOut>): ChunkIterable<TOut>;
   filter(fn: (x: T) => boolean): ChunkIterable<T>;
   filterAsync(fn: (x: T) => Promise<boolean>): ChunkIterable<T>;
@@ -41,6 +42,10 @@ export abstract class BaseChunkIterable<T> implements ChunkIterable<T> {
 
   map<TOut>(fn: (x: T) => TOut): ChunkIterable<TOut> {
     return new SyncMappedChunkIterable(this, fn);
+  }
+
+  flatMap<TOut>(fn: (x: T) => TOut[]): ChunkIterable<TOut> {
+    return new FlatMappedChunkIterable(this, fn);
   }
 
   filter(fn: (x: T) => boolean): ChunkIterable<T> {
@@ -143,6 +148,21 @@ export class SyncMappedChunkIterable<
   async *[Symbol.asyncIterator](): AsyncIterator<readonly TOut[]> {
     for await (const chunk of this.source) {
       yield chunk.map(this.fn);
+    }
+  }
+}
+
+export class FlatMappedChunkIterable<
+  TIn,
+  TOut
+> extends BaseChunkIterable<TOut> {
+  constructor(private source: ChunkIterable<TIn>, private fn: (TIn) => TOut[]) {
+    super();
+  }
+
+  async *[Symbol.asyncIterator](): AsyncIterator<readonly TOut[]> {
+    for await (const chunk of this.source) {
+      yield chunk.flatMap(this.fn);
     }
   }
 }

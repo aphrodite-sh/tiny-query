@@ -1,16 +1,17 @@
-import StaticSourceExpression from "./db/StaticSourceExpression.js";
+import StaticSourceExpression from "./expression/StaticSourceExpression.js";
 import HopPlan from "./plan/HopPlan.js";
 import Plan, { IPlan } from "./plan/Plan.js";
 import {
   Expression,
   filter,
+  flatMap,
   groupBy,
   HopExpression,
   map,
   orderByLambda,
   SourceExpression,
   take,
-} from "./Expression.js";
+} from "./expression/Expression.js";
 import P from "./Predicate.js";
 import ObjectFieldHopExpression from "./hop/ObjectFieldHopExpression.js";
 
@@ -58,9 +59,6 @@ class DerivedQuery<TOut> extends Query<TOut> {
   }
 
   query<T>(fn: (x: TOut) => T): DerivedQuery<ValueOf<T>> {
-    // ObjectFieldSourceExpression
-    // we get the thing along the path
-    // turn it into a StaticChunkIterable
     return new DerivedQuery<ValueOf<T>>(ObjectFieldHopQuery.create(this, fn));
   }
 
@@ -80,9 +78,9 @@ class DerivedQuery<TOut> extends Query<TOut> {
     return this.derive<TMapped>(map(fn));
   }
 
-  // flatMap<TMapped>(fn: (t: TOut) => TMapped[]): DerivedQuery<TMapped> {
-  //   return this.derive<TMapped>(flatMap(fn));
-  // }
+  flatMap<TMapped>(fn: (t: TOut) => TMapped[]): DerivedQuery<TMapped> {
+    return this.derive<TMapped>(flatMap(fn));
+  }
 
   groupBy<Tv>(fn: (t: TOut) => Tv): DerivedQuery<[Tv, TOut[]]> {
     return this.derive<[Tv, TOut[]]>(groupBy(fn));

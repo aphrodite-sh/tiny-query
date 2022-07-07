@@ -1,5 +1,5 @@
 import { ChunkIterable } from "../ChunkIterable.js";
-import { Expression, SourceExpression } from "../Expression.js";
+import { Expression, SourceExpression } from "../expression/Expression.js";
 import HopPlan from "./HopPlan.js";
 
 /**

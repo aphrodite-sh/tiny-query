@@ -6,7 +6,7 @@ export default function followPath<Tm, Tv>(
 ): Tv | undefined {
   let queriedValue = model;
   for (const key of path) {
-    if (queriedValue == null) {
+    if (queriedValue === undefined) {
       return undefined;
     }
     queriedValue = queriedValue[key] as any;

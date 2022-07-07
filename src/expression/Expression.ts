@@ -1,9 +1,9 @@
-import followPath from "./followPath.js";
-import { ChunkIterable, TakeChunkIterable } from "./ChunkIterable.js";
-import HopPlan from "./plan/HopPlan.js";
-import Plan, { IPlan } from "./plan/Plan.js";
-import { Predicate } from "./Predicate.js";
-import { Paths } from "paths.js";
+import followPath from "../followPath.js";
+import { ChunkIterable, TakeChunkIterable } from "../ChunkIterable.js";
+import HopPlan from "../plan/HopPlan.js";
+import Plan, { IPlan } from "../plan/Plan.js";
+import { Predicate } from "../Predicate.js";
+import { Paths } from "../paths.js";
 
 export interface FieldGetter<Tm, Tv> {
   readonly get: (Tm) => Tv | undefined;
@@ -27,6 +27,7 @@ export type ExpressionType =
   | "hop"
   | "count"
   | "map"
+  | "flatMap"
   | "hop"
   | "groupBy";
 
@@ -37,6 +38,7 @@ export type Expression =
   | ReturnType<typeof orderByLambda>
   | ReturnType<typeof count>
   | ReturnType<typeof map>
+  | ReturnType<typeof flatMap>
   | ReturnType<typeof hop>
   | ReturnType<typeof groupBy>;
 
@@ -101,6 +103,17 @@ export function map<T, R>(
     type: "map",
     chainAfter(iterable) {
       return iterable.map(fn);
+    },
+  };
+}
+
+export function flatMap<T, R>(
+  fn: (f: T) => R[]
+): { type: "flatMap" } & DerivedExpression<T, R> {
+  return {
+    type: "flatMap",
+    chainAfter(iterable) {
+      return iterable.flatMap(fn);
     },
   };
 }
