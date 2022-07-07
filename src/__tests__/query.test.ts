@@ -88,6 +88,7 @@ test("basic query", async () => {
   const allLargeAnimalsQuery = querify(farmers)
     .query((x) => x.animals)
     .where((x) => x.weight > 30);
+
   const allLargeAnimals = await allLargeAnimalsQuery.gen();
   const allLargeAnimalsSync = allLargeAnimalsQuery.genSync();
 
