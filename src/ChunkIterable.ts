@@ -64,12 +64,35 @@ export abstract class BaseChunkIterable<T> implements ChunkIterable<T> {
 }
 
 export class StaticSourceChunkIterable<T> extends BaseChunkIterable<T> {
-  constructor(private source: T[][]) {
+  constructor(private source: Iterable<T[]>) {
     super();
   }
 
   async *[Symbol.asyncIterator](): AsyncIterator<readonly T[]> {
     for (const chunk of this.source) {
+      yield chunk;
+    }
+  }
+}
+
+export class StaticSourceUnchunkedChunkIterable<
+  T
+> extends BaseChunkIterable<T> {
+  constructor(private source: Iterable<T>, private chunkSize = 100) {
+    super();
+  }
+
+  async *[Symbol.asyncIterator](): AsyncIterator<readonly T[]> {
+    let chunk: T[] = [];
+    for (const piece of this.source) {
+      chunk.push(piece);
+      if (chunk.length >= this.chunkSize) {
+        yield chunk;
+        chunk = [];
+      }
+    }
+
+    if (chunk.length > 0) {
       yield chunk;
     }
   }

@@ -1,14 +1,15 @@
 import Plan from "../plan/Plan.js";
 import { SourceExpression } from "../Expression.js";
-import { ChunkIterable } from "../ChunkIterable.js";
-import MemorySourceChunkIterable from "./MemorySourceChunkIterable.js";
-import { ModelType } from "./MemoryDb.js";
-import HopPlan from "plan/HopPlan.js";
+import {
+  ChunkIterable,
+  StaticSourceUnchunkedChunkIterable,
+} from "../ChunkIterable.js";
+import HopPlan from "../plan/HopPlan.js";
 
-export default class MemorySourceExpression<T extends ModelType>
+export default class StaticSourceExpression<T extends Object>
   implements SourceExpression<T>
 {
-  constructor(private collection: string) {}
+  constructor(private collection: Iterable<T>) {}
 
   optimize(plan: Plan, nextHop?: HopPlan): Plan {
     // Here we would visit all expressions in the plan (plan.derivations) and decide
@@ -40,21 +41,12 @@ export default class MemorySourceExpression<T extends ModelType>
       derivs.push(nextHop.hop);
       derivs = derivs.concat(nextHop.derivations);
     }
-    return new Plan(new MemorySourceExpression(this.collection), derivs);
+    return new Plan(new StaticSourceExpression(this.collection), derivs);
   }
 
   // All expressions return an `iterable` such that non-optimized expressions may be chained
   // one after another and thus fulfill the user's query.
   get iterable(): ChunkIterable<T> {
-    return new MemorySourceChunkIterable({
-      type: "read",
-      collection: this.collection,
-      // roots could be populated during optimization based on presence of `id filter` expressions
-      roots: undefined,
-    });
-  }
-
-  implicatedDataset(): string {
-    return this.collection;
+    return new StaticSourceUnchunkedChunkIterable(this.collection);
   }
 }

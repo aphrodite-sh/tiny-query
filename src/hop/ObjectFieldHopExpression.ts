@@ -1,3 +1,4 @@
+import { Paths } from "../paths.js";
 import { ChunkIterable } from "../ChunkIterable.js";
 import { HopExpression } from "../Expression.js";
 import HopPlan from "../plan/HopPlan.js";
@@ -9,7 +10,7 @@ export default class ObjectFieldHopExpression<
   TOut extends Object
 > implements HopExpression<TIn, TOut>
 {
-  constructor(public readonly path: string[]) {}
+  constructor(public readonly path: Paths<TIn>) {}
 
   chainAfter(iterable: ChunkIterable<TIn>): ChunkIterable<TOut> {
     return new ObjectFieldHopChunkIterable(iterable, this.path);

@@ -1,10 +1,9 @@
 import { orderBy } from "Expression.js";
-import { memoryDb } from "../db/MemoryDb.js";
 import P from "../Predicate.js";
-import { queryAll } from "../Query.js";
+import { querify } from "../Query.js";
 
 test("basic query", async () => {
-  memoryDb.upsert("farmers", [
+  const farmers = [
     {
       id: 0,
       name: "Brown",
@@ -48,15 +47,18 @@ test("basic query", async () => {
       },
       animals: [],
     },
-  ]);
+  ];
+
+  type Animal = typeof farmers[0]["animals"][0];
 
   // Query a collection, filter for "farmer brown", query the sub-collection
   // of his animals, filter for heavy ones.
   // queryAll is async given we allow async filters to be applied.
   // e.g., async lambdas.
-  const brownsLargeAnimals = await queryAll("farmers")
+  const brownsLargeAnimals = await querify(farmers)
     .where(["name"], P.equals("Brown"))
-    .query(["animals"])
+    // todo: can we make typescript figure this type out for us?
+    .query<Animal>(["animals"])
     .where(["weight"], P.greaterThan(30))
     .orderBy(["weight"], "desc")
     .gen();
@@ -75,7 +77,7 @@ test("basic query", async () => {
     },
   ]);
 
-  const alicePartner = await queryAll("farmers")
+  const alicePartner = await querify(farmers)
     .where(["partner", "name"], P.equals("Alice"))
     .gen();
 
@@ -91,8 +93,8 @@ test("basic query", async () => {
     },
   ]);
 
-  const allLargeAnimals = await queryAll("farmers")
-    .query(["animals"])
+  const allLargeAnimals = await querify(farmers)
+    .query<Animal>(["animals"])
     .where(["weight"], P.greaterThan(30))
     .gen();
 
@@ -103,7 +105,7 @@ test("basic query", async () => {
     { type: "alligator", weight: 250, ageInWeeks: 520 },
   ]);
 
-  const animalTypes = await queryAll("farmers")
+  const animalTypes = await querify(farmers)
     .query(["animals"])
     .map((a: { type: string }) => a.type)
     .gen();

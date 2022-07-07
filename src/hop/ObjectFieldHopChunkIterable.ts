@@ -1,3 +1,4 @@
+import { Paths } from "../paths.js";
 import { BaseChunkIterable, ChunkIterable } from "../ChunkIterable.js";
 import followPath from "../followPath.js";
 
@@ -7,7 +8,7 @@ export default class ObjectFieldHopChunkIterable<
 > extends BaseChunkIterable<TOut> {
   constructor(
     private readonly source: ChunkIterable<TIn>,
-    private readonly path: string[]
+    private readonly path: Paths<TIn>
   ) {
     super();
   }

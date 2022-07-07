@@ -3,13 +3,14 @@ import { ChunkIterable, TakeChunkIterable } from "./ChunkIterable.js";
 import HopPlan from "./plan/HopPlan.js";
 import Plan, { IPlan } from "./plan/Plan.js";
 import { Predicate } from "./Predicate.js";
+import { Paths } from "paths.js";
 
 export interface FieldGetter<Tm, Tv> {
   readonly get: (Tm) => Tv | undefined;
 }
 
 export class ObjectFieldGetter<Tm, Tv> implements FieldGetter<Tm, Tv> {
-  constructor(public readonly path: string[]) {}
+  constructor(public readonly path: Paths<Tm>) {}
 
   get(model: Tm): Tv | undefined {
     return followPath(model, this.path);
@@ -38,7 +39,6 @@ export type Expression =
 export interface SourceExpression<TOut> {
   readonly iterable: ChunkIterable<TOut>;
   optimize(plan: Plan, nextHop?: HopPlan): Plan;
-  implicatedDataset(): string;
 }
 
 export interface DerivedExpression<TIn, TOut> {
@@ -52,7 +52,6 @@ export interface HopExpression<TIn, TOut> {
    * Optimizes the current plan (plan) and folds in the nxet hop (nextHop) if possible.
    */
   optimize(sourcePlan: IPlan, plan: HopPlan, nextHop?: HopPlan): HopPlan;
-  implicatedDataset(): string | null;
   type: "hop";
 }
 

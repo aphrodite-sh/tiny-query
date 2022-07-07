@@ -1,4 +1,4 @@
-import MemorySourceExpression from "./db/MemorySourceExpression.js";
+import StaticSourceExpression from "./db/StaticSourceExpression.js";
 import HopPlan from "./plan/HopPlan.js";
 import Plan, { IPlan } from "./plan/Plan.js";
 import {
@@ -14,6 +14,7 @@ import {
 } from "./Expression.js";
 import P, { Predicate } from "./Predicate.js";
 import ObjectFieldHopExpression from "./hop/ObjectFieldHopExpression.js";
+import { Paths } from "./paths.js";
 
 export abstract class Query<T> {
   // async since we allow application of async filters, maps, etc.
@@ -28,7 +29,6 @@ export abstract class Query<T> {
   }
 
   abstract plan(): IPlan;
-  abstract implicatedDatasets(): Set<string>;
 }
 
 class SourceQuery<T> extends Query<T> {
@@ -38,10 +38,6 @@ class SourceQuery<T> extends Query<T> {
 
   plan() {
     return new Plan(this.expression, []);
-  }
-
-  implicatedDatasets(): Set<string> {
-    return new Set([this.expression.implicatedDataset()]);
   }
 }
 
@@ -61,18 +57,20 @@ class DerivedQuery<TOut> extends Query<TOut> {
     return new DerivedQuery(this, expression);
   }
 
-  query<T>(path: string[]): DerivedQuery<T> {
+  query<T>(path: Paths<TOut>): DerivedQuery<T> {
     // ObjectFieldSourceExpression
     // we get the thing along the path
     // turn it into a StaticChunkIterable
-    return new DerivedQuery(ObjectFieldHopQuery.create(this, path));
+    return new DerivedQuery<T>(ObjectFieldHopQuery.create(this, path));
   }
 
-  where<T>(path: string[], predicate: Predicate<T>) {
-    return this.derive(filter<TOut, T>(new ObjectFieldGetter(path), predicate));
+  where<T>(path: Paths<TOut>, predicate: Predicate<T>) {
+    return this.derive<TOut>(
+      filter<TOut, T>(new ObjectFieldGetter(path), predicate)
+    );
   }
 
-  orderBy(path: string[], direction: Direction) {
+  orderBy(path: Paths<TOut>, direction: Direction) {
     return this.derive(orderBy(new ObjectFieldGetter(path), direction));
   }
 
@@ -96,10 +94,6 @@ class DerivedQuery<TOut> extends Query<TOut> {
 
     return plan;
   }
-
-  implicatedDatasets(): Set<string> {
-    return this.#priorQuery.implicatedDatasets();
-  }
 }
 
 export abstract class HopQuery<TIn, TOut> extends Query<TOut> {
@@ -113,19 +107,10 @@ export abstract class HopQuery<TIn, TOut> extends Query<TOut> {
   plan() {
     return new HopPlan(this.priorQuery.plan(), this.expression, []);
   }
-
-  implicatedDatasets(): Set<string> {
-    const s = this.priorQuery.implicatedDatasets();
-    const ds = this.expression.implicatedDataset();
-    if (ds != null) {
-      s.add(ds);
-    }
-    return s;
-  }
 }
 
-export function queryAll<TOut>(collection: string): DerivedQuery<TOut> {
-  const source = new SourceQuery(new MemorySourceExpression(collection));
+export function querify<TOut>(collection: Iterable<TOut>): DerivedQuery<TOut> {
+  const source = new SourceQuery(new StaticSourceExpression(collection));
   return new DerivedQuery(source);
 }
 
@@ -135,7 +120,7 @@ export default class ObjectFieldHopQuery<
 > extends HopQuery<TIn, TOut> {
   static create<TIn extends Object, TOut extends Object>(
     sourceQuery: Query<TIn>,
-    path: string[]
+    path: Paths<TIn>
   ) {
     return new ObjectFieldHopQuery<TIn, TOut>(
       sourceQuery,
