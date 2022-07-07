@@ -10,10 +10,10 @@ export default class ObjectFieldHopExpression<
   TOut extends Object
 > implements HopExpression<TIn, TOut>
 {
-  constructor(public readonly path: Paths<TIn>) {}
+  constructor(public readonly fn: (x: TIn) => TOut) {}
 
   chainAfter(iterable: ChunkIterable<TIn>): ChunkIterable<TOut> {
-    return new ObjectFieldHopChunkIterable(iterable, this.path);
+    return new ObjectFieldHopChunkIterable(iterable, this.fn);
   }
 
   optimize(sourcePlan: IPlan, plan: HopPlan, nextHop?: HopPlan): HopPlan {
@@ -24,7 +24,7 @@ export default class ObjectFieldHopExpression<
     }
     return new HopPlan(
       sourcePlan,
-      new ObjectFieldHopExpression(this.path),
+      new ObjectFieldHopExpression(this.fn),
       derivs
     );
   }

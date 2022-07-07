@@ -3,9 +3,12 @@ import P from "../Predicate.js";
 import { querify } from "../Query.js";
 
 test("basic query", async () => {
-  const farmers = [
+  const farmers: {
+    name: string;
+    animals: { type: string; weight: number; ageInWeeks: number }[];
+    partner?: { name: string };
+  }[] = [
     {
-      id: 0,
       name: "Brown",
       partner: {
         name: "Nancy",
@@ -29,7 +32,6 @@ test("basic query", async () => {
       ],
     },
     {
-      id: 1,
       name: "Billy",
       animals: [
         {
@@ -40,7 +42,6 @@ test("basic query", async () => {
       ],
     },
     {
-      id: 2,
       name: "Bob",
       partner: {
         name: "Alice",
@@ -49,18 +50,15 @@ test("basic query", async () => {
     },
   ];
 
-  type Animal = typeof farmers[0]["animals"][0];
-
   // Query a collection, filter for "farmer brown", query the sub-collection
   // of his animals, filter for heavy ones.
   // queryAll is async given we allow async filters to be applied.
   // e.g., async lambdas.
   const brownsLargeAnimals = await querify(farmers)
-    .where(["name"], P.equals("Brown"))
-    // todo: can we make typescript figure this type out for us?
-    .query<Animal>(["animals"])
-    .where(["weight"], P.greaterThan(30))
-    .orderBy(["weight"], "desc")
+    .where((x) => x.name === "Brown")
+    .query((x) => x.animals)
+    .where((x) => x.weight > 30)
+    .orderBy((l, r) => r.weight - l.weight)
     .gen();
 
   console.log(brownsLargeAnimals);
@@ -78,13 +76,12 @@ test("basic query", async () => {
   ]);
 
   const alicePartner = await querify(farmers)
-    .where(["partner", "name"], P.equals("Alice"))
+    .where((x) => x.partner?.name === "Alice")
     .gen();
 
   console.log(alicePartner);
   expect(alicePartner).toEqual([
     {
-      id: 2,
       name: "Bob",
       partner: {
         name: "Alice",
@@ -94,8 +91,8 @@ test("basic query", async () => {
   ]);
 
   const allLargeAnimals = await querify(farmers)
-    .query<Animal>(["animals"])
-    .where(["weight"], P.greaterThan(30))
+    .query((x) => x.animals)
+    .where((x) => x.weight > 30)
     .gen();
 
   console.log(allLargeAnimals);
@@ -106,8 +103,8 @@ test("basic query", async () => {
   ]);
 
   const animalTypes = await querify(farmers)
-    .query(["animals"])
-    .map((a: { type: string }) => a.type)
+    .query((x) => x.animals)
+    .map((a) => a.type)
     .gen();
 
   console.log(animalTypes);

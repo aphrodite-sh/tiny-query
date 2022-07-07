@@ -2,19 +2,18 @@ import StaticSourceExpression from "./db/StaticSourceExpression.js";
 import HopPlan from "./plan/HopPlan.js";
 import Plan, { IPlan } from "./plan/Plan.js";
 import {
-  Direction,
   Expression,
   filter,
   HopExpression,
   map,
-  ObjectFieldGetter,
-  orderBy,
+  orderByLambda,
   SourceExpression,
   take,
 } from "./Expression.js";
-import P, { Predicate } from "./Predicate.js";
+import P from "./Predicate.js";
 import ObjectFieldHopExpression from "./hop/ObjectFieldHopExpression.js";
-import { Paths } from "./paths.js";
+
+type ValueOf<T> = T[keyof T extends number ? keyof T : never];
 
 export abstract class Query<T> {
   // async since we allow application of async filters, maps, etc.
@@ -57,29 +56,23 @@ class DerivedQuery<TOut> extends Query<TOut> {
     return new DerivedQuery(this, expression);
   }
 
-  query<T>(path: Paths<TOut>): DerivedQuery<T> {
+  query<T>(fn: (x: TOut) => T): DerivedQuery<ValueOf<T>> {
     // ObjectFieldSourceExpression
     // we get the thing along the path
     // turn it into a StaticChunkIterable
-    return new DerivedQuery<T>(ObjectFieldHopQuery.create(this, path));
+    return new DerivedQuery<ValueOf<T>>(ObjectFieldHopQuery.create(this, fn));
   }
 
-  where<T>(path: Paths<TOut>, predicate: Predicate<T>) {
-    return this.derive<TOut>(
-      filter<TOut, T>(new ObjectFieldGetter(path), predicate)
-    );
+  where(fn: (x: TOut) => boolean) {
+    return this.derive<TOut>(filter<TOut, TOut>(null, P.lambda(fn)));
   }
 
-  orderBy(path: Paths<TOut>, direction: Direction) {
-    return this.derive<TOut>(orderBy(new ObjectFieldGetter(path), direction));
+  orderBy(fn: (l: TOut, r: TOut) => number) {
+    return this.derive<TOut>(orderByLambda(fn));
   }
 
   take(n: number) {
     return this.derive<TOut>(take(n));
-  }
-
-  whereLambda(fn: (t: TOut) => boolean): DerivedQuery<TOut> {
-    return this.derive<TOut>(filter<TOut, TOut>(null, P.lambda(fn)));
   }
 
   map<TMapped>(fn: (t: TOut) => TMapped): DerivedQuery<TMapped> {
@@ -120,11 +113,11 @@ export default class ObjectFieldHopQuery<
 > extends HopQuery<TIn, TOut> {
   static create<TIn extends Object, TOut extends Object>(
     sourceQuery: Query<TIn>,
-    path: Paths<TIn>
+    fn: (x: TIn) => TOut
   ) {
     return new ObjectFieldHopQuery<TIn, TOut>(
       sourceQuery,
-      new ObjectFieldHopExpression(path)
+      new ObjectFieldHopExpression(fn)
     );
   }
 }

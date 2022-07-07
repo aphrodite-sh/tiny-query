@@ -23,6 +23,7 @@ export type ExpressionType =
   | "take"
   | "filter"
   | "orderBy"
+  | "orderByLambda"
   | "hop"
   | "count"
   | "map"
@@ -32,6 +33,7 @@ export type Expression =
   | ReturnType<typeof take>
   | ReturnType<typeof filter>
   | ReturnType<typeof orderBy>
+  | ReturnType<typeof orderByLambda>
   | ReturnType<typeof count>
   | ReturnType<typeof map>
   | ReturnType<typeof hop>;
@@ -138,6 +140,17 @@ export function orderBy<Tm, Tv>(
   };
 }
 
+export function orderByLambda<Tm>(fn: (l: Tm, r: Tm) => number): {
+  type: "orderByLambda";
+} & DerivedExpression<Tm, Tm> {
+  return {
+    type: "orderByLambda",
+    chainAfter(iterable) {
+      return iterable.orderBy(fn);
+    },
+  };
+}
+
 export function count<Tm>(): { type: "count" } & DerivedExpression<Tm, number> {
   return {
     type: "count",
@@ -146,6 +159,8 @@ export function count<Tm>(): { type: "count" } & DerivedExpression<Tm, number> {
     },
   };
 }
+
+// export function groupBy
 
 export function hop<TIn, TOut>(): HopExpression<TIn, TOut> {
   throw new Error();
