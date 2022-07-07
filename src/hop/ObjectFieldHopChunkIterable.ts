@@ -16,4 +16,10 @@ export default class ObjectFieldHopChunkIterable<
       yield chunk.flatMap((i) => this.fn(i));
     }
   }
+
+  *[Symbol.iterator](): Iterator<readonly TOut[]> {
+    for (const chunk of this.source) {
+      yield chunk.flatMap((i) => this.fn(i));
+    }
+  }
 }

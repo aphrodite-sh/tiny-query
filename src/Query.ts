@@ -29,6 +29,18 @@ export abstract class Query<T> {
     return results;
   }
 
+  // if all stages of the pipeline are synchronous (e.g., no async operations)
+  // we can `genSync` for convenience.
+  genSync(): T[] {
+    const plan = this.plan().optimize();
+    let results: T[] = [];
+    for (const chunk of plan.iterable) {
+      results = results.concat(chunk);
+    }
+
+    return results;
+  }
+
   abstract plan(): IPlan;
 }
 
